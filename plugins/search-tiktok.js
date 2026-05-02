@@ -11,7 +11,7 @@ if (!fs.existsSync(process.env.TMPDIR)) {
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     if (!text) {
-      return conn.reply(m.chat, `🐉 Ejemplo de uso Del comando Beast: ${usedPrefix + command} Mini Dog`, m);
+      return conn.reply(m.chat, `🐉 Ejemplo de uso Del comando Beast: ${usedPrefix + command} Gohan beast edits`, m);
     }
     m.react('🌀');
     let old = new Date();
@@ -69,7 +69,7 @@ async function ttks(query) {
     const shuffled = videos.sort(() => 0.5 - Math.random()).slice(0, 5);
     return {
       status: true,
-      creator: "Made with Ado",
+      creator: "Made with DvWilkerOFC",
       data: shuffled.map(video => ({
         title: video.title,
         no_wm: video.play,
