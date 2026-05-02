@@ -72,10 +72,10 @@
 
 Sigue estos pasos para instalar y ejecutar **Gohan Beast Bot** en tu dispositivo.
 
-### 1. ```**Concede Permisos de Almacenamiento**
- bash
+1. **Concede Permisos de Almacenamiento**
+```bash
 termux-setup-storage
-    ```
+```
 
 2.  **Actualiza y Prepara el Entorno**
     ```bash
