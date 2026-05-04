@@ -69,7 +69,7 @@ var handler = async (m, { conn, text, usedPrefix, command }) => {
 }
 
 handler.help = ['ig', 'fb', 'tt']
-handler.tags = ['download']
+handler.tags = ['descargas']
 handler.command = /^(ig|instagram|ig2|fb|facebook|fb2|tt|tiktok|tiktok2)$/i
 
 export default handler
