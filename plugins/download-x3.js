@@ -14,7 +14,7 @@ var handler = async (m, { conn, text, usedPrefix, command }) => {
         if (/ig|instagram/i.test(command)) {
             endpoint = `https://api.evogb.org/dl/instagram?url=${encodeURIComponent(query)}&key=${key}`
         } else if (/fb|facebook/i.test(command)) {
-            endpoint = `https://api.evogb.org/dl/facebook?url=${encodeURIComponent(query)}&key=${key}`
+            endpoint = `https://api-gohan.onrender.com/download/facebook?url=${encodeURIComponent(query)}&key=${key}`
         } else if (/tk|tiktok/i.test(command)) {
             endpoint = `https://api.evogb.org/dl/tiktok?url=${encodeURIComponent(query)}&key=${key}`
         }
