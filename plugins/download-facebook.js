@@ -8,6 +8,7 @@ var handler = async (m, { conn, text, usedPrefix, command }) => {
 
     try {
 
+      //api ofc de Gohan
         const apiUrl = `https://api-gohan.onrender.com/download/facebook?url=${encodeURIComponent(query)}`
         
         const { data } = await axios.get(apiUrl)
