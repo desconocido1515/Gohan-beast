@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐉 Login - Gohan Beast</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a0f1e 0%, #1a0f2e 50%, #0a0a1a 100%);
+      font-family: 'Segoe UI', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(15px);
+      border-radius: 30px;
+      padding: 40px;
+      width: 90%;
+      max-width: 450px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .login-card h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #ff6b35;
+    }
+
+    .login-card p {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 30px;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 30px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 16px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      background: rgba(255,255,255,0.2);
+      border-left: 3px solid #ff6b35;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 30px;
+      background: linear-gradient(45deg, #ff6b35, #ff8c5a);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.02);
+    }
+
+    .error {
+      color: #ff4444;
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: rgba(255,68,68,0.1);
+      border-radius: 10px;
+    }
+
+    .login-card a {
+      color: #ff6b35;
+      text-decoration: none;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>🐉 GOHAN BEAST</h1>
+    <p>⚡ Inicia sesión para acceder al poder</p>
+    
+    <div id="message"></div>
+    
+    <input type="email" id="email" placeholder="📧 Correo electrónico" autocomplete="off">
+    <input type="password" id="password" placeholder="🔒 Contraseña">
+    
+    <button onclick="login()">🔐 Iniciar Sesión</button>
+    
+    <div class="footer">
+      ¿No tienes cuenta? <a href="/register">Regístrate aquí</a>
+    </div>
+  </div>
+
+  <script>
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const messageDiv = document.getElementById('message');
+      
+      if (!email || !password) {
+        messageDiv.innerHTML = '<div class="error">❌ Todos los campos son obligatorios</div>';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          messageDiv.innerHTML = '<div class="success">✅ Login exitoso! Redirigiendo al dashboard...</div>';
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+        } else {
+          messageDiv.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+        }
+      } catch (error) {
+        messageDiv.innerHTML = '<div class="error">❌ Error de conexión</div>';
+      }
+    }
+  </script>
+</body>
+</html>
