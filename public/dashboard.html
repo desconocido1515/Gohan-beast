@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Gohan Beast</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a0f1e 0%, #1a0f2e 50%, #0a0a1a 100%);
+      font-family: 'Segoe UI', monospace;
+      color: white;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      color: #ff6b35;
+    }
+
+    .logout-btn {
+      background: rgba(255,68,68,0.2);
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      border: 1px solid #ff4444;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255,68,68,0.4);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-card h2 {
+      font-size: 2rem;
+      color: #ff6b35;
+    }
+
+    .users-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .users-section h2 {
+      margin-bottom: 20px;
+      color: #ffcc00;
+    }
+
+    .user-list {
+      list-style: none;
+    }
+
+    .user-list li {
+      padding: 15px;
+      margin: 10px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .online-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #00ff88;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-weight: bold;
+      color: #ff6b35;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .command-panel {
+      margin-top: 30px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .command-input {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .command-input input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 30px;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .command-input button {
+      padding: 12px 25px;
+      border-radius: 30px;
+      border: none;
+      background: #ff6b35;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🐉 Panel de Control - Gohan Beast</h1>
+      <div class="logout-btn" onclick="logout()">🚪 Cerrar Sesión</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h2 id="totalUsers">0</h2>
+        <p>👥 Total Usuarios</p>
+      </div>
+      <div class="stat-card">
+        <h2 id="onlineUsers">0</h2>
+        <p>🟢 Conectados Ahora</p>
+      </div>
+    </div>
+
+    <div class="users-section">
+      <h2>🟢 Usuarios Conectados en Tiempo Real</h2>
+      <ul class="user-list" id="userList">
+        <li>Cargando usuarios...</li>
+      </ul>
+    </div>
+
+    <div class="command-panel">
+      <h2>⚡ Enviar Comando al Bot</h2>
+      <div class="command-input">
+        <input type="text" id="commandInput" placeholder="Ejemplo: .invocar">
+        <button onclick="sendCommand()">📤 Enviar</button>
+      </div>
+      <div id="commandResponse" style="margin-top: 10px; color: #00ff88;"></div>
+    </div>
+  </div>
+
+  <script>
+    let socket = io();
+    let currentUser = null;
+
+    // Verificar autenticación
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/verify');
+        const data = await res.json();
+        if (!data.success) {
+          window.location.href = '/login';
+        } else {
+          currentUser = data.user;
+          socket.emit('auth', getCookie('token'));
+          loadStats();
+        }
+      } catch (e) {
+        window.location.href = '/login';
+      }
+    }
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const stats = await res.json();
+        document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+        document.getElementById('onlineUsers').textContent = stats.onlineUsers || 0;
+      } catch (e) {}
+    }
+
+    function updateUserList(users) {
+      const list = document.getElementById('userList');
+      if (!users || users.length === 0) {
+        list.innerHTML = '<li style="color:#888;">No hay usuarios conectados</li>';
+        return;
+      }
+      list.innerHTML = users.map(user => `
+        <li>
+          <div class="online-dot"></div>
+          <div class="user-info">
+            <div class="user-name">${user.username}</div>
+            <div class="user-email">${user.email}</div>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function sendCommand() {
+      const input = document.getElementById('commandInput');
+      const command = input.value.trim();
+      if (!command) return;
+      
+      socket.emit('send_command', { command });
+      document.getElementById('commandResponse').innerHTML = `✅ Comando "${command}" enviado al bot`;
+      input.value = '';
+      
+      setTimeout(() => {
+        document.getElementById('commandResponse').innerHTML = '';
+      }, 3000);
+    }
+
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = '/login';
+    }
+
+    // Socket events
+    socket.on('auth_success', (data) => {
+      console.log('Autenticado:', data.user);
+    });
+
+    socket.on('users_online', (users) => {
+      updateUserList(users);
+      document.getElementById('onlineUsers').textContent = users.length;
+    });
+
+    socket.on('bot_stats', (stats) => {
+      document.getElementById('totalUsers').textContent = stats.totalUsers;
+    });
+
+    // Iniciar
+    checkAuth();
+    setInterval(loadStats, 5000);
+  </script>
+</body>
+</html>
