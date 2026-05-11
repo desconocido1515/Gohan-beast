@@ -134,7 +134,7 @@ await conn.sendMessage(
 handler.help = ['menu']
 handler.tags = ['main']
 handler.command = ['menu', 'menú', 'help', 'allmenú', 'allmenu', 'menucompleto']
-handler.register = true
+handler.register = false
 export default handler
 
 function clockString(ms) {
