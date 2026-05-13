@@ -1,4 +1,4 @@
-// 🐉⚡ GOHAN BEAST MODE - MAIN BOT ⚡🐉
+// 🐉⚡ GOHAN BEAST MODE - MAIN BOT CON SISTEMA PREMIUM ⚡🐉
 import fs from 'fs'
 import path, { join } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -93,7 +93,152 @@ global.prefix = new RegExp(
     ']'
 );
 
-// Configuración de base de datos
+// ========== 🐉 SISTEMA PREMIUM CON JSON ==========
+// Archivo donde se guardan los usuarios premium
+const premiumFilePath = join(__dirname, 'storage', 'premium.json');
+
+// Asegurar que la carpeta storage existe
+if (!existsSync(join(__dirname, 'storage'))) {
+  mkdirSync(join(__dirname, 'storage'), { recursive: true });
+}
+
+// Crear archivo premium.json si no existe
+if (!existsSync(premiumFilePath)) {
+  fs.writeFileSync(premiumFilePath, JSON.stringify({}, null, 2));
+  console.log(chalk.green('✅ Archivo premium.json creado'));
+}
+
+// Función para cargar datos premium
+global.cargarPremium = () => {
+  try {
+    const data = fs.readFileSync(premiumFilePath, 'utf-8');
+    return JSON.parse(data);
+  } catch (e) {
+    console.error(chalk.red('❌ Error al cargar premium.json:'), e);
+    return {};
+  }
+};
+
+// Función para guardar datos premium
+global.guardarPremium = (data) => {
+  try {
+    fs.writeFileSync(premiumFilePath, JSON.stringify(data, null, 2));
+    return true;
+  } catch (e) {
+    console.error(chalk.red('❌ Error al guardar premium.json:'), e);
+    return false;
+  }
+};
+
+// Función para verificar si un usuario es premium (y está activo)
+global.esPremium = (userId) => {
+  const data = global.cargarPremium();
+  const hoy = new Date();
+  
+  if (!data[userId]) return false;
+  
+  const usuario = data[userId];
+  const expiracion = new Date(usuario.expiracion);
+  
+  // Verificar si está activo y no expiró
+  if (usuario.activo && expiracion >= hoy) {
+    return true;
+  } else if (usuario.activo && expiracion < hoy) {
+    // Si expiró, lo desactiva automáticamente
+    usuario.activo = false;
+    global.guardarPremium(data);
+    return false;
+  }
+  return false;
+};
+
+// Función para obtener info de premium de un usuario
+global.getPremiumInfo = (userId) => {
+  const data = global.cargarPremium();
+  if (!data[userId]) return null;
+  return data[userId];
+};
+
+// Función para agregar premium (solo owner)
+global.agregarPremium = (userId, userName, dias) => {
+  const data = global.cargarPremium();
+  const hoy = new Date();
+  const expiracion = new Date();
+  expiracion.setDate(hoy.getDate() + dias);
+  
+  data[userId] = {
+    nombre: userName || 'Desconocido',
+    inicio: hoy.toISOString().split('T')[0],
+    expiracion: expiracion.toISOString().split('T')[0],
+    dias: dias,
+    activo: true,
+    fecha_activacion: Date.now()
+  };
+  
+  global.guardarPremium(data);
+  return data[userId];
+};
+
+// Función para eliminar premium (solo owner)
+global.eliminarPremium = (userId) => {
+  const data = global.cargarPremium();
+  if (data[userId]) {
+    delete data[userId];
+    global.guardarPremium(data);
+    return true;
+  }
+  return false;
+};
+
+// Función para obtener lista de usuarios premium activos
+global.listarPremiumActivos = () => {
+  const data = global.cargarPremium();
+  const hoy = new Date();
+  const activos = [];
+  
+  for (const [id, info] of Object.entries(data)) {
+    const expiracion = new Date(info.expiracion);
+    if (info.activo && expiracion >= hoy) {
+      activos.push({ id, ...info });
+    } else if (expiracion < hoy) {
+      // Limpieza pasiva
+      info.activo = false;
+      global.guardarPremium(data);
+    }
+  }
+  return activos;
+};
+
+// LIMPIEZA AUTOMÁTICA CADA 24 HORAS
+setInterval(() => {
+  console.log(chalk.yellow('🧹 [GOHAN BESTIA] Ejecutando limpieza de premium...'));
+  const data = global.cargarPremium();
+  const hoy = new Date();
+  let cambios = false;
+  
+  for (const id in data) {
+    if (data[id].activo) {
+      const expiracion = new Date(data[id].expiracion);
+      if (expiracion < hoy) {
+        data[id].activo = false;
+        cambios = true;
+        console.log(chalk.red(`❌ Premium expirado: ${data[id].nombre} (${id})`));
+      }
+    }
+  }
+  
+  if (cambios) {
+    global.guardarPremium(data);
+    console.log(chalk.green('✅ Limpieza de premium completada'));
+  } else {
+    console.log(chalk.gray('✅ No hay premium expirados'));
+  }
+}, 24 * 60 * 60 * 1000); // 24 horas
+
+console.log(chalk.green('✅ Sistema premium cargado correctamente'));
+// ========== FIN SISTEMA PREMIUM ==========
+
+// Configuración de base de datos principal
 global.db = new Low(new JSONFile(`storage/databases/database.json`));
 
 // --- OPTIMIZACIÓN DE BASE DE DATOS ---
@@ -614,7 +759,7 @@ Object.freeze(global.reload);
 watch(pluginFolder, global.reload);
 await global.reloadHandler();
 
-// Mensaje final att wilker
+// Mensaje final
 console.log(chalk.bold.magenta('\n' + '⭐'.repeat(30)));
 console.log(chalk.bold.yellow('   🐉 GOHAN BESTIA - LISTO PARA PELEAR 🐉'));
 console.log(chalk.bold.cyan('   「El poder de un Saiyajin no tiene límites」'));
