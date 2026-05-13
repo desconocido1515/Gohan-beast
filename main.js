@@ -185,10 +185,6 @@ const connectionOptions = {
 global.conn = makeWASocket(connectionOptions);
 global.conns = global.conns || [];
 
-// ========== SISTEMA PREMIUM - IMPORTACIÓN ==========
-import { cleanExpiredPremium, getPremiumStats } from './database/premium.js';
-// ========== FIN SISTEMA PREMIUM ==========
-
 // Cargar handler
 let handler;
 try {
@@ -433,25 +429,6 @@ setInterval(() => {
   console.log(chalk.gray('🧹 [GOHAN BESTIA] Limpieza temporal completada'));
 }, 180000);
 
-// ========== SISTEMA PREMIUM - LIMPIEZA AUTOMÁTICA CADA HORA ==========
-setInterval(async () => {
-    try {
-        const cleaned = cleanExpiredPremium();
-        if (cleaned > 0) {
-            console.log(chalk.green(`🧹 [GOHAN BESTIA] Limpieza premium: ${cleaned} usuarios expirados eliminados`));
-            console.log(chalk.cyan(`📊 [GOHAN BESTIA] Estadísticas premium: ${getPremiumStats().activeUsers} usuarios activos`));
-        }
-    } catch (e) {
-        console.error(chalk.red('❌ Error en limpieza premium:'), e);
-    }
-}, 60 * 60 * 1000); // Cada hora
-
-// Inicializar sistema premium
-console.log(chalk.magenta('⚡ [GOHAN BESTIA] Sistema Premium Activado'));
-cleanExpiredPremium();
-console.log(chalk.green(`✅ [GOHAN BESTIA] ${getPremiumStats().activeUsers} usuarios premium activos`));
-// ========== FIN SISTEMA PREMIUM ==========
-
 // Recolección de basura si está disponible
 if (typeof global.gc === 'function') {
   setInterval(() => {
@@ -637,9 +614,10 @@ Object.freeze(global.reload);
 watch(pluginFolder, global.reload);
 await global.reloadHandler();
 
-// Mensaje final
+// Mensaje final att wilker
 console.log(chalk.bold.magenta('\n' + '⭐'.repeat(30)));
 console.log(chalk.bold.yellow('   🐉 GOHAN BESTIA - LISTO PARA PELEAR 🐉'));
 console.log(chalk.bold.cyan('   「El poder de un Saiyajin no tiene límites」'));
-console.log(chalk.bold.green(`   ⭐ Usuarios premium activos: ${getPremiumStats().activeUsers} ⭐`));
 console.log(chalk.bold.magenta('⭐'.repeat(30) + '\n'));
+
+El main.js agrégalo tu we y me pasas listo
