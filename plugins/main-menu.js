@@ -1,154 +1,253 @@
-import axios from 'axios'
-import moment from 'moment-timezone'
+import fs from 'fs'
+import { join } from 'path'
+import { xpRange } from '../lib/levelling.js'
 
-let handler = async (m, { conn, usedPrefix }) => {
+const tags = {
+  jadibot: '🐉 SUBBOTS',
+  eco: '⚡ ENERGÍA SAIYAN',
+  descargas: '🌀 DESCARGAS',
+  tools: '🔧 HERRAMIENTAS',
+  owner: '👑 MAESTRO SAIYAN',
+  info: 'ℹ️ INFORMACIÓN',
+  game: '🎮 ENTRENAMIENTO',
+  gacha: '🎲 ECO DEL REY',
+  reacciones: '💥 REACCIONES',
+  group: '👥 DOJO SAIYAN',
+  search: '🔎 BUSCADOR KAME',
+  sticker: '📌 STICKERS',
+  ia: '🤖 ANDROID 16',
+  channel: '📺 KAME HOUSE',
+  fun: '😂 DIVERSIÓN SAIYAN',
+  beast: '🐉 COMANDOS BEAST'
+}
+
+const defaultMenu = {
+  before: `
+╔══════════════════╗
+║🐉 𝙶𝙾𝙷𝙰𝙽 𝙱𝙴𝙰𝚂𝚃 𝙱𝙾𝚃 🌀  ║
+╠══════════════════╣
+║ Hola~ soy %botname (◕ᴗ◕✿)
+║ *%name*, %greeting jeje
+║ 
+║ 🐉 *Tipo:* %tipo
+║ ⚡ *Nivel Saiyan:* *100%*
+║ 📅 *Fecha:* %date
+║ 🕐 *Hora Vzla:* %time
+║ ⏱️ *Activo:* %uptime
+╠════════════════════╣
+║      🌀 𝙲𝙾𝙼𝙰𝙽𝙳𝙾𝚂 𝙶𝙾𝙷𝙰𝙽       
+%readmore
+`.trimStart(),
+
+  header: '\n╠═ %category ═╣\n',
+  body: '║ 🌀 *%cmd* %islimit %isPremium',
+  footer: '',
+  after: `
+╠════════════════╣
+║🐉 *Gohan Beast Bot* 
+║⚡ Creado por Wilker~ (◕‿◕✿)
+║🌀 Base: Dragon Ball Z/Super
+║💫 Domina el chat con poder Saiyan!
+╚════════════════╝
+
+*¡Que la fuerza Saiyan te acompañe!* 🌀✨
+`.trim(),
+}
+
+const handler = async (m, { conn, usedPrefix: _p }) => {
   try {
-    let userId = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
-    let userData = global.db.data.users[userId] || {}
-    let exp = userData.exp || 0
-    let coin = userData.coin || 0
-    let level = userData.level || 0
-    let role = userData.role || 'Sin Rango'
-    let name = await conn.getName(userId)
+    const { exp, limit, level } = global.db.data.users[m.sender]
+    const { min, xp, max } = xpRange(level, global.multiplier)
+    const name = await conn.getName(m.sender)
 
-    let _uptime = process.uptime() * 1000
-    let uptime = clockString(_uptime)
-    let totalreg = Object.keys(global.db.data.users).length
-    let totalCommands = Object.keys(global.plugins).length
+    const ahora = new Date()
+    const horaVenezuela = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Caracas' }))
+    
+    const date = horaVenezuela.toLocaleDateString('es', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric',
+      weekday: 'long'
+    })
+    
+    const time = horaVenezuela.toLocaleTimeString('es', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    })
 
-    let fechaObj = new Date()
-    let hora = new Date().toLocaleTimeString('es-VE', { timeZone: 'America/Caracas' })
-    let fecha = fechaObj.toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Caracas' })
-    let dia = fechaObj.toLocaleDateString('es-VE', { weekday: 'long', timeZone: 'America/Caracas' })
+    const help = Object.values(global.plugins)
+      .filter(p => !p.disabled)
+      .map(p => ({
+        help: Array.isArray(p.help) ? p.help : [p.help],
+        tags: Array.isArray(p.tags) ? p.tags : [p.tags],
+        prefix: 'customPrefix' in p,
+        limit: p.limit,
+        premium: p.premium,
+      }))
 
-    let video = 'https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778426067417-VID-20260510-WA0207.mp4'
-
-const emojis = {
-  'main': '🐉', 'tools': '⚡', 'audio': '🎶', 'group': '🐉',
-  'owner': '👑', 'fun': '🎮', 'info': '📘', 'internet': '🌐',
-  'downloads': '⬇️', 'admin': '🗡️', 'anime': '🐉', 'nsfw': '🚫',
-  'search': '🔍', 'sticker': '🔪', 'game': '🕹️', 'premium': '💎', 'bot': '🤖'
-}
-
-let grupos = {}
-for (let plugin of Object.values(global.plugins || {})) {
-  if (!plugin.help || !plugin.tags) continue
-  for (let tag of plugin.tags) {
-    if (!grupos[tag]) grupos[tag] = []
-    for (let help of plugin.help) {
-      if (/^\$|^=>|^>/.test(help)) continue
-      grupos[tag].push(`${usedPrefix}${help}`)
+    let nombreBot = 'Gohan Beast Bot'
+    
+    let bannerFinal = null
+    const imagePath = join(process.cwd(), 'lib', 'gohan.jpg')
+    
+    if (fs.existsSync(imagePath)) {
+      bannerFinal = fs.readFileSync(imagePath)
+    } else {
+      console.warn('⚠️ No se encuentra lib/gohan.jpg')
     }
-  }
-}
 
-for (let tag in grupos) {
-  grupos[tag].sort((a, b) => a.localeCompare(b))
-}
-
-const secciones = Object.entries(grupos).map(([tag, cmds]) => {
-  const emoji = emojis[tag] || '🐉'
-      return `╭━━🐉 ${tag.toUpperCase()} 🐉━⬣\n`
-     + cmds.map(cmd => `┃ ➩ ${cmd}`).join('\n') 
-     + `\n╰━🌀〔 🐉 〕🍃━⬣`
-    }).join('\n\n')
-
-let menuText = `
-╔══════════════╗
- 🐉 𝙶𝙾𝙷𝙰𝙽 𝙱𝙴𝙰𝚂𝚃 🌀
-╚══════════════╝
-
-${ucapan()} @${userId.split('@')[0]}
-
-────────────────
-👤 𝙸𝙽𝙵𝙾 𝙳𝙴𝙻 𝚄𝚂𝙴𝚁
-────────────────
-👤 𝚄𝚂𝚄𝙰𝚁𝙸𝙾: ${name}
-💎 𝙽𝙸𝚅𝙴𝙻: ${level}
-🗿 𝙴𝚇𝙿𝙴𝚁𝙸𝙴𝙽𝙲𝙸𝙰: ${exp}
-🐉 𝚁𝙰𝙽𝙶𝙾: ${role}
-
-────────────────
-🤖 𝙸𝙽𝙵𝙾 𝙳𝙴𝙻 𝙱𝙾𝚃
-────────────────
-🐉 𝙾𝚆𝙽𝙴𝚁: wa.me/${global.suittag?.[0] || '5492644138998'}
-🎧 𝙴𝚂𝚃𝙰𝙳𝙾: ${(conn.user.jid == global.conn.user.jid ? '𝙶𝙾𝙷𝙰𝙽 𝙿𝚁𝙸𝙽𝙲𝙸𝙿𝙰𝙻 🐉' : '𝙶𝙾𝙷𝙰𝙽 𝚂𝚄𝙱 𝙱𝙾𝚃 🌀')}
-🎉 𝙲𝙾𝙼𝙰𝙽𝙳𝙾𝚂: ${totalCommands}
-👥 𝚄𝚂𝚄𝙰𝚁𝙸𝙾𝚂: ${totalreg}
-⏳ 𝚄𝙿𝚃𝙸𝙼𝙴: ${uptime}
-
-────────────────
-⏰ 𝙵𝙴𝙲𝙷𝙰 𝚈 𝙷𝙾𝚁𝙰 
-────────────────
-🕝 𝙷𝙾𝚁𝙰: ${hora}
-📅 𝙵𝙴𝙲𝙷𝙰: ${fecha}
-🏙️ 𝙳𝙸𝙰: ${dia}
-────────────────
-🐉 𝙶𝙾𝙷𝙰𝙽 𝙱𝙴𝙰𝚂𝚃 • 𝚂𝙸𝚂𝚃𝙴𝙼𝙰 𝙰𝙲𝚃𝙸𝚅𝙾
-© 𝟸𝟶𝟸𝟻 - 𝟸𝟶𝟸𝟼 𝙿𝚘𝚠𝚎𝚛𝚎𝚍 𝙱𝚢 𝙳𝚅𝚆𝙸𝙻𝙺𝙴𝚁 
-────────────────
-📂 𝙲𝙾𝙼𝙰𝙽𝙳𝙾𝚂
-────────────────
-${secciones}
-`.trim()
-
-await m.react('🐉')
-
-await conn.sendMessage(
-  m.chat,
-  {
-    video: { url: video },
-    caption: menuText,
-    gifPlayback: true,
-    gifAttribution: 0,
-    contextInfo: {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardingScore: 999,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: global.ch?.ch1 || '120363421367237421@newsletter',
-        serverMessageId: 100,
-        newsletterName: 'Gohan Beast'
-      },
-      externalAdReply: {
-        title: global.botname || 'Gohan Beast',
-        body: global.dev || '© Powered by Dvwilker',
-        thumbnailUrl: global.banner || 'https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169576033-IMG-20260502-WA0216.jpg',
-        mediaType: 1,
-        renderLargerThumbnail: true
+    const botActual = conn.user?.jid?.split('@')[0].replace(/\D/g, '')
+    const configPath = join('./JadiBots', botActual, 'config.json')
+    
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath))
+        if (config.name) nombreBot = config.name
+      } catch (e) {
+        console.error('🌀 Error leyendo config:', e)
       }
     }
-  },
-  { quoted: m }
-)
+
+    const tipo = conn.user.jid === global.conn.user.jid ? '🐉 PRINCIPAL' : '⚡ SUB-SAIYAN'
+    const menuConfig = conn.menu || defaultMenu
+
+    const _text = [
+      menuConfig.before,
+      ...Object.keys(tags).map(tag => {
+        const cmds = help
+          .filter(menu => menu.tags?.includes(tag))
+          .map(menu => menu.help.map(h => 
+            menuConfig.body
+              .replace(/%cmd/g, menu.prefix ? h : `${_p}${h}`)
+              .replace(/%islimit/g, menu.limit ? '🔒' : '')
+              .replace(/%isPremium/g, menu.premium ? '💎' : '🌀')
+          ).join('\n')).join('\n')
+        return cmds ? [menuConfig.header.replace(/%category/g, tags[tag]), cmds, menuConfig.footer].join('\n') : ''
+      }).filter(Boolean),
+      menuConfig.after
+    ].join('\n')
+
+    const replace = {
+      '%': '%',
+      p: _p,
+      botname: nombreBot,
+      taguser: '@' + m.sender.split('@')[0],
+      exp: exp - min,
+      maxexp: xp,
+      totalexp: exp,
+      xp4levelup: max - exp,
+      level,
+      limit,
+      name,
+      date,
+      time,
+      uptime: clockString(process.uptime() * 1000),
+      tipo,
+      readmore: readMore,
+      greeting: getUwUGreeting(horaVenezuela.getHours()),
+    }
+
+    const text = _text.replace(
+      new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join('|')})`, 'g'),
+      (_, name) => String(replace[name])
+    )
+
+    const buttons = [
+      { 
+        buttonId: '.code', 
+        buttonText: { displayText: '🐉 SAIYAN' }, 
+        type: 1 
+      }
+    ]
+
+    const messageContent = {
+      caption: text.trim(),
+      footer: '🌀 *Gohan Beast Bot* - ¡Comandos Dragon Ball!',
+      buttons,
+      headerType: 1,
+      mentionedJid: conn.parseMention(text),
+      contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true
+      }
+    }
+
+    if (bannerFinal) {
+      messageContent.image = bannerFinal
+      messageContent.headerType = 4
+    } else {
+      messageContent.text = text.trim()
+    }
+
+    await conn.sendMessage(m.chat, messageContent, { quoted: m })
+
+    await m.react('🌀')
+    setTimeout(() => m.react('⚡'), 500)
+    setTimeout(() => m.react('🐉'), 1000)
 
   } catch (e) {
-    console.error(e)
-    await conn.sendMessage(m.chat, {
-      text: `✘ Error al enviar el menú: ${e.message}`,
-      mentions: [m.sender]
-    }, { quoted: m })
+    console.error('💥 Error en el menú uwu:', e)
+    await conn.reply(m.chat, 
+`🌀 *¡Ups! Algo salió mal~* (´•̥̥̥ω•̥̥̥\`)
+
+El menú Saiyan no pudo cargarse...
+⚡ *Causa:* Energía insuficiente
+🌀 *Solución:* Intenta de nuevo~
+
+*Mientras usa:* ${_p}help simple`, 
+      m
+    )
   }
 }
 
-handler.help = ['menu']
-handler.tags = ['main']
-handler.command = ['menu', 'menú', 'help', 'allmenú', 'allmenu', 'menucompleto']
+handler.command = ['menu', 'help', 'menú', 'ayuda', 'comandos', 'beastmenu', 'gohan']
+handler.tags = ['beast', 'main', 'menu']
+handler.help = ['menu',]
 handler.register = false
+handler.limit = false
+
 export default handler
 
+const more = String.fromCharCode(8206)
+const readMore = more.repeat(4001)
+
 function clockString(ms) {
-  let seconds = Math.floor((ms / 1000) % 60)
-  let minutes = Math.floor((ms / (1000 * 60)) % 60)
-  let hours = Math.floor((ms / (1000 * 60 * 60)) % 24)
-  return `${hours}h ${minutes}m ${seconds}s`
+  let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
+  let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
+  let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
+  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':')
 }
 
-function ucapan() {
-  const time = moment.tz('America/Caracas').format('HH')
-  let res = "ʙᴜᴇɴᴀs ɴᴏᴄʜᴇs 🐉"
-  if (time >= 5 && time < 12) res = "ʙᴜᴇɴᴏs ᴅɪᴀs 🐉"
-  else if (time >= 12 && time < 18) res = "ʙᴜᴇɴᴀs ᴛᴀʀᴅᴇs 🐉"
-  else if (time >= 18) res = "ʙᴜᴇɴᴀs ɴᴏᴄʜᴇs 🐉"
-  return res
+function getUwUGreeting(hour) {
+  const greetings = {
+    0: 'una noche mágica bajo las estrellas 🌙✨',
+    1: 'una noche de sueños Saiyan 💤 🌀',
+    2: 'una noche llena de energía Ki 🌌⚡',
+    3: 'un amanecer en la Room of Spirit and Time 🌅⏳',
+    4: 'un amanecer de meditación Kame 🧘🌀',
+    5: 'un amanecer de entrenamiento con King Kai 👑🌅',
+    6: 'una mañana de Kamehameha en la playa 🏖️🌀',
+    7: 'una mañana en Kame House con tortugas 🏠🐢',
+    8: 'una mañana volando en Nimbus ☁️ 🌀',
+    9: 'una mañana en el Tenkaichi Budokai 🥋🎯',
+    10: 'un día de batalla en el Cell Games ⚔️💥',
+    11: 'un día de torneo del Poder 💪🌟',
+    12: 'un día soleado en el Planet Namek 🌍☀️',
+    13: 'una tarde de entrenamiento con Whis 🥛🌀',
+    14: 'una tarde en el Hyperbolic Time Chamber ⏱️✨',
+    15: 'una tarde de fusiones en el dojo 🔄🌸',
+    16: 'una tarde de transformaciones Saiyan 🌀💫',
+    17: 'un atardecer después del Genkidama 🌇⚡',
+    18: 'una noche de recuperación en la cápsula 💊🏥',
+    19: 'una noche viendo las estrellas Saiyan 🌠🐉',
+    20: 'una noche de cuentos del Planeta Vegeta 🪐📖',
+    21: 'una noche preparando Semillas Senzu 🌱🍡',
+    22: 'una noche protegiendo la Tierra 🌎🛡️',
+    23: 'una noche de vigilia Saiyan 🌃🌸',
+  }
+  return 'Espero que tengas ' + (greetings[hour] || 'un día increíble lleno de poder Saiyan~ 🌸✨')
 }
+
+handler.alias = ['menuu', 'ayudame', 'comanditos', 'beasthelp']
