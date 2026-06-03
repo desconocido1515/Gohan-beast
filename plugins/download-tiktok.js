@@ -41,7 +41,7 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
             }
 
             const { titulo, autor, descargar, duracion } = data;
-            const videoFinalUrl = `https://api-de-el-vigilante-8jnf.onrender.com${descargar}`;
+            const videoFinalUrl = `https://api-gohan-v1.onrender.com${descargar}`;
 
             const caption = `🎵 *TIKTOK - GOHAN BEAST*
 
