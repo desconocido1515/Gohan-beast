@@ -20,7 +20,7 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
     try {
 
         if (!isDirectLink) {
-            const searchUrl = `https://api-de-el-vigilante-8jnf.onrender.com/search/tiktok?query=${encodeURIComponent(query)}`;
+            const searchUrl = `https://api-gohan-v1.onrender.com/search/tiktok?query=${encodeURIComponent(query)}`;
             const searchRes = await fetch(searchUrl);
             const searchData = await searchRes.json();
 
@@ -32,7 +32,7 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
             const video = searchData.resultados[0];
             const videoUrl = video.tiktok_url;
             
-            const downloadUrl = `https://api-de-el-vigilante-8jnf.onrender.com/download/tiktok?url=${encodeURIComponent(videoUrl)}`;
+            const downloadUrl = `https://api-gohan-v1.onrender.com/download/tiktok?url=${encodeURIComponent(videoUrl)}`;
             const response = await fetch(downloadUrl);
             const data = await response.json();
 
@@ -63,7 +63,7 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
 
         await conn.sendMessage(m.chat, { text: '🐉 Procesando video en GOHAN BEAST...' }, { quoted: m });
 
-        const downloadUrl = `https://api-de-el-vigilante-8jnf.onrender.com/download/tiktok?url=${encodeURIComponent(query)}`;
+        const downloadUrl = `https://api-gohan-v1.onrender.com/download/tiktok?url=${encodeURIComponent(query)}`;
         const response = await fetch(downloadUrl);
         const data = await response.json();
 
@@ -72,7 +72,7 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
         }
 
         const { titulo, autor, cover, descargar, duracion } = data;
-        const videoUrl = `https://api-de-el-vigilante-8jnf.onrender.com${descargar}`;
+        const videoUrl = `https://api-gohan-v1.onrender.com${descargar}`;
 
         const caption = `🎵 *TIKTOK - GOHAN BEAST*
 
