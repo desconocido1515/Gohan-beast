@@ -1,15 +1,14 @@
 import fetch from 'node-fetch';
 
-let handler = async (m, { conn, text, args, usedPrefix, command }) => {
+let handler = async (m, { conn, text, usedPrefix, command }) => {
     if (!text) {
         return m.reply(`🎵 *TIKTOK DOWNLOADER - GOHAN BEAST*
 
-🐉 *Uso:* ${usedPrefix + command} <enlace>
+🐉 *Uso:* ${usedPrefix + command} <enlace o búsqueda>
 
-📝 *Ejemplo:* 
+📝 *Ejemplos:* 
 ${usedPrefix + command} https://vm.tiktok.com/xxxxx
-
-> 🐉 Envía un enlace de TikTok para descargar el video`);
+${usedPrefix + command} goku edit`);
     }
 
     await m.react('🎵');
@@ -18,41 +17,40 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
     let isDirectLink = query.includes('tiktok.com') || query.includes('vm.tiktok.com');
 
     try {
-
         if (!isDirectLink) {
-            const searchUrl = `https://api-gohan-v1.onrender.com/search/tiktok?query=${encodeURIComponent(query)}`;
-            const searchRes = await fetch(searchUrl);
+            const searchUrl = `https://api-gohan-v1.onrender.com/search/tiktok?q=${encodeURIComponent(query)}`;
+            const searchRes = await fetch(searchUrl, {
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
             const searchData = await searchRes.json();
 
             if (!searchData.status || !searchData.resultados?.length) {
                 throw new Error('No se encontraron resultados');
             }
 
-            // Tomar el primer resultado
             const video = searchData.resultados[0];
-            const videoUrl = video.tiktok_url;
+            const videoUrl = video.url || video.tiktok_url;
             
             const downloadUrl = `https://api-gohan-v1.onrender.com/download/tiktok?url=${encodeURIComponent(videoUrl)}`;
-            const response = await fetch(downloadUrl);
+            const response = await fetch(downloadUrl, {
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
             const data = await response.json();
 
-            if (!data.status || !data.tiktok_url) {
+            if (!data.status || !data.url) {
                 throw new Error('No se pudo obtener el video');
             }
 
-            const { titulo, autor, descargar, duracion } = data;
-            const videoFinalUrl = `https://api-gohan-v1.onrender.com${descargar}`;
-
             const caption = `🎵 *TIKTOK - GOHAN BEAST*
 
-🐉 *Título:* ${titulo || 'Sin título'}
-👤 *Autor:* ${autor || 'Desconocido'}
-⏱️ *Duración:* ${duracion || '?'}s
+🐉 *Título:* ${data.titulo || video.titulo || 'Sin título'}
+👤 *Autor:* ${data.autor || video.autor || 'Desconocido'}
+⏱️ *Duración:* ${data.duracion || video.duracion || '?'}s
 
 > 🐉 *GOHAN BEAST MODE*`;
 
             await conn.sendMessage(m.chat, {
-                video: { url: videoFinalUrl },
+                video: { url: data.url },
                 caption: caption,
                 mimetype: 'video/mp4'
             }, { quoted: m });
@@ -61,29 +59,28 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
             return;
         }
 
-        await conn.sendMessage(m.chat, { text: '🐉 Procesando video en GOHAN BEAST...' }, { quoted: m });
+        await conn.sendMessage(m.chat, { text: '🐉 Procesando video...' }, { quoted: m });
 
         const downloadUrl = `https://api-gohan-v1.onrender.com/download/tiktok?url=${encodeURIComponent(query)}`;
-        const response = await fetch(downloadUrl);
+        const response = await fetch(downloadUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
         const data = await response.json();
 
-        if (!data.status || !data.tiktok_url) {
+        if (!data.status || !data.url) {
             throw new Error('No se pudo obtener el video');
         }
 
-        const { titulo, autor, cover, descargar, duracion } = data;
-        const videoUrl = `https://api-gohan-v1.onrender.com${descargar}`;
-
         const caption = `🎵 *TIKTOK - GOHAN BEAST*
 
-🐉 *Título:* ${titulo || 'Sin título'}
-👤 *Autor:* ${autor || 'Desconocido'}
-⏱️ *Duración:* ${duracion || '?'}s
+🐉 *Título:* ${data.titulo || 'Sin título'}
+👤 *Autor:* ${data.autor || 'Desconocido'}
+⏱️ *Duración:* ${data.duracion || '?'}s
 
 > 🐉 *GOHAN BEAST MODE*`;
 
         await conn.sendMessage(m.chat, {
-            video: { url: videoUrl },
+            video: { url: data.url },
             caption: caption,
             mimetype: 'video/mp4'
         }, { quoted: m });
@@ -97,11 +94,12 @@ ${usedPrefix + command} https://vm.tiktok.com/xxxxx
 
 No se pudo procesar tu solicitud.
 
-📝 *Asegúrate de:* 
-▸ Enviar un enlace válido de TikTok
-▸ El video sea público
+📝 *Posibles soluciones:*
+▸ Verifica que el enlace sea válido
+▸ Intenta con otro video
+▸ El video debe ser público
 
-> ${error.message || 'Intenta de nuevo más tarde'}`);
+> ${error.message}`);
     }
 };
 
