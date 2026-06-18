@@ -7,8 +7,7 @@ import {
   proto
 } from '@whiskeysockets/baileys'
 
-const API_KEY = 'elvigilante123'
-const BASE_API = 'https://elvigilante-api.onrender.com'
+const BASE_API = 'https://api-gohan-v1.onrender.com'
 let pendientes = {}
 
 function crearMensaje(chat, text, buttons, m, media = null) {
@@ -102,7 +101,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       ].join('\n')
     }, { quoted: m })
 
-    const apiUrl = `${BASE_API}/api/download/facebook?url=${encodeURIComponent(text)}&apiKey=${API_KEY}`
+    const apiUrl = `${BASE_API}/download/facebook?url=${encodeURIComponent(text)}`
 
     const res = await Promise.race([
       fetch(apiUrl),
