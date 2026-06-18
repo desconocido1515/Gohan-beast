@@ -7,16 +7,10 @@ import {
   proto
 } from '@whiskeysockets/baileys'
 
-// ──────────────────────────────────────────
-// CONFIG
-// ──────────────────────────────────────────
-const API_KEY  = 'elvigilante123'
+const API_KEY = 'elvigilante123'
 const BASE_API = 'https://elvigilante-api.onrender.com'
 let pendientes = {}
 
-// ──────────────────────────────────────────
-// CREAR MENSAJE INTERACTIVO
-// ──────────────────────────────────────────
 function crearMensaje(chat, text, buttons, m, media = null) {
   const interactiveMessage = proto.Message.InteractiveMessage.create({
     header: {
@@ -37,14 +31,8 @@ function crearMensaje(chat, text, buttons, m, media = null) {
   )
 }
 
-// ──────────────────────────────────────────
-// HANDLER PRINCIPAL
-// ──────────────────────────────────────────
 let handler = async (m, { conn, text, usedPrefix, command }) => {
 
-  // ──────────────────────────────────────────
-  // SIN TEXTO — MOSTRAR USO
-  // ──────────────────────────────────────────
   if (!text) {
     const bodyText = [
       `╭━━━〔 🐉 *GOHAN BEAST — FACEBOOK* 〕━━⬣`,
@@ -82,9 +70,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     return
   }
 
-  // ──────────────────────────────────────────
-  // VALIDAR URL
-  // ──────────────────────────────────────────
   const esFacebook = text.includes('facebook.com') ||
                      text.includes('fb.watch') ||
                      text.includes('fb.com')
@@ -117,9 +102,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       ].join('\n')
     }, { quoted: m })
 
-    // ──────────────────────────────────────────
-    // LLAMAR API
-    // ──────────────────────────────────────────
     const apiUrl = `${BASE_API}/api/download/facebook?url=${encodeURIComponent(text)}&apiKey=${API_KEY}`
 
     const res = await Promise.race([
@@ -135,18 +117,14 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     const { title, duration, thumbnail, download_url } = data.result
 
-    const min    = Math.floor((duration || 0) / 60)
-    const seg    = (duration || 0) % 60
+    const min = Math.floor((duration || 0) / 60)
+    const seg = (duration || 0) % 60
     const durStr = `${min}:${String(seg).padStart(2, '0')}`
 
-    // Guardar pendiente
     const chatId = m.chat
     pendientes[chatId] = { url: download_url, title: title || 'Video Facebook' }
     setTimeout(() => delete pendientes[chatId], 60000)
 
-    // ──────────────────────────────────────────
-    // THUMBNAIL
-    // ──────────────────────────────────────────
     let media = null
     const tmpDir = path.join(process.cwd(), 'tmp')
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
@@ -154,7 +132,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     if (thumbnail) {
       try {
         const thumbPath = path.join(tmpDir, `fb_${Date.now()}.jpg`)
-        const thumbRes  = await fetch(thumbnail)
+        const thumbRes = await fetch(thumbnail)
         if (thumbRes.ok) {
           fs.writeFileSync(thumbPath, Buffer.from(await thumbRes.arrayBuffer()))
           media = await prepareWAMessageMedia(
@@ -166,9 +144,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       } catch {}
     }
 
-    // ──────────────────────────────────────────
-    // MENSAJE CON BOTÓN DE DESCARGA
-    // ──────────────────────────────────────────
     const bodyText = [
       `╭━━━〔 🐉 *GOHAN BEAST — FACEBOOK* 〕━━⬣`,
       `┃`,
@@ -223,21 +198,15 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 }
 
-// ──────────────────────────────────────────
-// BEFORE — MANEJO DE BOTONES
-// ──────────────────────────────────────────
 handler.before = async (m, { conn }) => {
   const nativeFlow = m.message?.interactiveResponseMessage?.nativeFlowResponseMessage
   if (!nativeFlow) return false
 
   try {
     const data = JSON.parse(nativeFlow.paramsJson || '{}')
-    const id   = data.id || data.selectedId || null
+    const id = data.id || data.selectedId || null
     if (!id) return false
 
-    // ──────────────────────────────────────────
-    // BOTÓN DE AYUDA
-    // ──────────────────────────────────────────
     if (id.startsWith('fb_help_')) {
       await conn.sendMessage(m.chat, {
         text: [
@@ -252,12 +221,9 @@ handler.before = async (m, { conn }) => {
       return true
     }
 
-    // ──────────────────────────────────────────
-    // BOTÓN DE DESCARGA
-    // ──────────────────────────────────────────
     if (!id.startsWith('fb_download_')) return false
 
-    const chatId   = id.replace('fb_download_', '')
+    const chatId = id.replace('fb_download_', '')
     const pendiente = pendientes[chatId]
 
     if (!pendiente) {
@@ -286,7 +252,7 @@ handler.before = async (m, { conn }) => {
       ].join('\n')
     }, { quoted: m })
 
-    const tmpDir   = path.join(process.cwd(), 'tmp')
+    const tmpDir = path.join(process.cwd(), 'tmp')
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
     const filePath = path.join(tmpDir, `fb_${Date.now()}.mp4`)
@@ -341,8 +307,8 @@ handler.before = async (m, { conn }) => {
 }
 
 handler.command = ['facebook', 'fb', 'fbdl', 'gohanfb']
-handler.help    = ['fb <url>']
-handler.tags    = ['descargas']
-handler.desc    = 'Descarga videos de Facebook con poder divino 🐉'
+handler.help = ['fb <url>']
+handler.tags = ['descargas']
+handler.desc = 'Descarga videos de Facebook con poder divino 🐉'
 
 export default handler
