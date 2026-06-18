@@ -1,60 +1,121 @@
-const handler = async (m, { args, conn, usedPrefix }) => {
+const handler = async (m, { args, conn, usedPrefix, command }) => {
   try {
-
     if (!args[0]) {
-      return conn.reply(
-        m.chat,
-        '🐉 *GOHAN BEAST — FACEBOOK* 🐉\n\n⚡ Por favor, proporciona un enlace válido de Facebook.\n\n📌 Ejemplo:\n.fb https://facebook.com/watch?v=...',
-        m
-      )
+      const helpMsg = `🐉 *GOHAN BEAST — FACEBOOK* 🐉
+
+⚡ Envía un enlace de Facebook para descargar.
+
+📌 *Ejemplo:*
+${usedPrefix + command} https://facebook.com/watch?v=...
+
+💡 *Comandos:*
+➤ ${usedPrefix}fb <link> - Descargar video
+➤ ${usedPrefix}fbaudio <link> - Descargar solo audio
+
+🐉 *Gohan Beast - Poder Máximo Activado*`
+      
+      return conn.reply(m.chat, helpMsg, m)
     }
 
-    let data = []
+    let videoUrl = ''
+    let audioUrl = ''
+    let title = 'Facebook Video'
+    let isAudio = command === 'fbaudio' || command === 'facebookaudio'
 
     if (m.react) await m.react('🐉')
 
     try {
-      const api = `${global.APIs.delirius.url}/download/facebook?url=${encodeURIComponent(args[0])}`
+      const api = `https://api-gohan-v1.onrender.com/download/facebook?url=${encodeURIComponent(args[0])}`
       const res = await fetch(api)
       const json = await res.json()
 
-      if (Array.isArray(json?.data)) {
-        data = json.data.map(v => v.url)
+      if (json?.result?.download_url) {
+        videoUrl = json.result.download_url
+        title = json.result.title || 'Facebook Video'
+      }
+
+      if (json?.result?.audio_url) {
+        audioUrl = json.result.audio_url
       }
 
     } catch (e) {
-      console.log('Delirius FB error:', e.message)
+      console.log('Gohan API error:', e.message)
     }
 
-    if (!data.length) {
-      try {
-        const api = `${global.APIs.vreden.url}/api/fbdownload?url=${encodeURIComponent(args[0])}`
-        const res = await fetch(api)
-        const json = await res.json()
-
-        if (Array.isArray(json?.resultado?.respuesta?.datos)) {
-          data = json.resultado.respuesta.datos.map(v => v.url)
-        }
-
-      } catch (e) {
-        console.log('Vreden FB error:', e.message)
-      }
-    }
-
-    if (!data.length) {
+    if (!videoUrl && !audioUrl) {
       return conn.reply(
         m.chat,
-        '🐉 *GOHAN BEAST* 🐉\n\n❌ No se pudo obtener el contenido del enlace.\n\n💡 Posibles causas:\n➤ El video es privado\n➤ Link incorrecto\n➤ API no disponible',
+        '🐉 *GOHAN BEAST* 🐉\n\n❌ No se pudo obtener el contenido del enlace.\n\n💡 Posibles causas:\n➤ El video es privado\n➤ Link incorrecto\n➤ El video no existe',
         m
       )
     }
 
-    for (let media of data) {
+    if (isAudio) {
+      if (audioUrl) {
+        await conn.sendFile(
+          m.chat,
+          audioUrl,
+          'facebook-audio.mp3',
+          `🐉 *GOHAN BEAST — FACEBOOK AUDIO* 🐉
+
+✅ Aquí tienes tu audio guerrero.
+
+🎵 *Título:* ${title}
+🎵 *Formato:* MP3
+⚡ Poder Máximo Activado`,
+          m
+        )
+        if (m.react) await m.react('✅')
+      } else {
+        await conn.reply(m.chat, '🐉 *GOHAN BEAST* 🐉\n\n❌ No se encontró audio para este video.', m)
+        await m.react('❌')
+      }
+      return
+    }
+
+    if (videoUrl) {
+      const buttons = [
+        {
+          buttonId: `fb_video_${encodeURIComponent(videoUrl)}`,
+          buttonText: { displayText: '📹 Video' },
+          type: 1
+        },
+        {
+          buttonId: `fb_audio_${encodeURIComponent(args[0])}`,
+          buttonText: { displayText: '🎵 Audio' },
+          type: 1
+        }
+      ]
+
+      const buttonMessage = {
+        text: `🐉 *GOHAN BEAST — FACEBOOK* 🐉
+
+✅ Video encontrado guerrero.
+
+📹 *Título:* ${title}
+
+📹 *Opciones:*
+➤ Toca "Video" para descargar el video
+➤ Toca "Audio" para descargar solo el audio
+
+⚡ ¿Qué deseas hacer?`,
+        footer: 'Gohan Beast - Poder Máximo Activado',
+        buttons: buttons,
+        headerType: 1
+      }
+
+      await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
+      
       await conn.sendFile(
         m.chat,
-        media,
+        videoUrl,
         'facebook.mp4',
-        '🐉 *GOHAN BEAST — FACEBOOK* 🐉\n\n✅ Aquí tienes tu video guerrero.\n\n⚡ Poder Máximo Activado',
+        `🐉 *GOHAN BEAST — FACEBOOK* 🐉
+
+✅ Aquí tienes tu video guerrero.
+
+📹 *Título:* ${title}
+⚡ Poder Máximo Activado`,
         m
       )
 
@@ -67,8 +128,69 @@ const handler = async (m, { args, conn, usedPrefix }) => {
   }
 }
 
-handler.command = ['facebook', 'fb', 'gohanfb']
+handler.before = async (m, { conn }) => {
+  try {
+    if (!m.message?.buttonsResponseMessage) return false
+    
+    const response = m.message.buttonsResponseMessage
+    const text = response.selectedButtonId || ''
+    
+    if (text.startsWith('fb_video_')) {
+      const url = decodeURIComponent(text.replace('fb_video_', ''))
+      await conn.sendFile(
+        m.chat,
+        url,
+        'facebook.mp4',
+        '🐉 *GOHAN BEAST — FACEBOOK* 🐉\n\n✅ Aquí tienes tu video guerrero.\n\n⚡ Poder Máximo Activado',
+        m
+      )
+      await m.react('✅')
+      return true
+    }
+    
+    if (text.startsWith('fb_audio_')) {
+      const url = decodeURIComponent(text.replace('fb_audio_', ''))
+      
+      try {
+        const api = `https://api-gohan-v1.onrender.com/download/facebook?url=${encodeURIComponent(url)}`
+        const res = await fetch(api)
+        const json = await res.json()
+        
+        if (json?.result?.audio_url) {
+          await conn.sendFile(
+            m.chat,
+            json.result.audio_url,
+            'facebook-audio.mp3',
+            `🐉 *GOHAN BEAST — FACEBOOK AUDIO* 🐉
+
+✅ Aquí tienes tu audio guerrero.
+
+🎵 *Título:* ${json.result.title || 'Facebook Audio'}
+🎵 *Formato:* MP3
+⚡ Poder Máximo Activado`,
+            m
+          )
+          await m.react('✅')
+        } else {
+          await conn.reply(m.chat, '🐉 *GOHAN BEAST* 🐉\n\n❌ No se encontró audio para este video.', m)
+          await m.react('❌')
+        }
+      } catch (e) {
+        await conn.reply(m.chat, '🐉 *GOHAN BEAST* 🐉\n\n❌ Error al obtener el audio.', m)
+        await m.react('❌')
+      }
+      return true
+    }
+    
+    return false
+  } catch (e) {
+    console.log('Error en botones FB:', e.message)
+    return false
+  }
+}
+
+handler.command = ['facebook', 'fb', 'fbaudio', 'facebookaudio', 'gohanfb']
 handler.tags = ['descargas']
-handler.help = ['facebook', 'fb']
+handler.help = ['facebook', 'fb', 'fbaudio']
 
 export default handler
