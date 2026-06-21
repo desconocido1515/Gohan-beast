@@ -1,3 +1,4 @@
+// plugins/economy.js (actualizar con los nuevos comandos)
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -29,12 +30,16 @@ export function getUser(userId) {
       registered: false,
       coins: 0,
       bank: 0,
-      level: 0,
       exp: 0,
       lastDaily: 0,
+      lastWork: 0,
       lastMine: 0,
       lastRun: 0,
-      lastSlut: 0
+      lastSlut: 0,
+      lastRob: 0,
+      lastHunt: 0,
+      lastFish: 0,
+      lastGamble: 0
     }
     saveUsers(users)
   }
@@ -66,8 +71,4 @@ export function formatTime(ms) {
 
 export function formatNumber(num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-}
-
-export function getLevel(exp) {
-  return Math.floor(exp / 1000)
 }
