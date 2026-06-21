@@ -4,7 +4,7 @@ import { xpRange } from '../lib/levelling.js'
 
 const tags = {
   jadibot: '🐉 SUBBOTS',
-  eco: '⚡ ENERGÍA SAIYAN',
+  economy: '⚡ ENERGÍA SAIYAN',
   descargas: '🌀 DESCARGAS',
   tools: '🔧 HERRAMIENTAS',
   owner: '👑 MAESTRO SAIYAN',
