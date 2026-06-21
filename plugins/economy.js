@@ -1,4 +1,3 @@
-// plugins/economy.js (actualizar con los nuevos comandos)
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
