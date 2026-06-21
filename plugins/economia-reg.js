@@ -1,0 +1,61 @@
+import { getUser, updateUser, getLevel, formatNumber } from './economy.js'
+
+let handler = async (m, { conn, text }) => {
+  const userId = m.sender
+  const user = getUser(userId)
+  
+  if (user.registered) {
+    const level = getLevel(user.exp)
+    return conn.reply(m.chat, `
+🐉 GOHAN BEAST — PERFIL
+
+👤 Nombre: ${user.name || 'Sin nombre'}
+📅 Edad: ${user.age || 'Sin edad'}
+🏆 Nivel: ${level}
+💎 Coins: ${formatNumber(user.coins)}
+🏦 Banco: ${formatNumber(user.bank)}
+⚡ Exp: ${formatNumber(user.exp)}
+    `.trim(), m)
+  }
+
+  if (!text) {
+    return conn.reply(m.chat, `
+🐉 GOHAN BEAST — REGISTRO
+
+⚡ Para registrarte usa:
+.reg nombre.edad
+
+📌 Ejemplo: .reg DvWilkerOFC.15
+
+🎁 Recompensa: ${formatNumber(global.regCoins)} ${global.coin}
+    `.trim(), m)
+  }
+
+  const [name, age] = text.split('.')
+  if (!name || !age || isNaN(age)) {
+    return conn.reply(m.chat, '❌ Formato incorrecto. Usa: .reg nombre.edad', m)
+  }
+
+  user.registered = true
+  user.name = name.trim()
+  user.age = parseInt(age)
+  user.coins = global.regCoins
+  user.exp = 0
+  updateUser(userId, user)
+
+  await conn.reply(m.chat, `
+🐉 GOHAN BEAST — REGISTRO EXITOSO
+
+✅ ¡Bienvenido guerrero ${name}!
+
+🎁 Recompensa: ${formatNumber(global.regCoins)} ${global.coin}
+📅 Edad: ${age} años
+    `.trim(), m)
+  await m.react('🐉')
+}
+
+handler.command = ['reg']
+handler.tags = ['economy']
+handler.help = ['reg nombre.edad']
+
+export default handler
