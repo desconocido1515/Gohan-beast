@@ -556,6 +556,36 @@ global.reloadHandler = async function (restartConn) {
   return true;
 };
 
+// ============================================
+// === FUNCIÓN PARA LEER SUBCARPETAS ===
+// ============================================
+function getAllPluginFiles(dir) {
+  let results = [];
+  
+  try {
+    const list = readdirSync(dir);
+    
+    for (const file of list) {
+      const filePath = join(dir, file);
+      const stat = statSync(filePath);
+      
+      if (stat && stat.isDirectory()) {
+        // Si es carpeta, la recorremos recursivamente
+        results = results.concat(getAllPluginFiles(filePath));
+      } else {
+        // Solo archivos .js
+        if (file.endsWith('.js')) {
+          results.push(filePath);
+        }
+      }
+    }
+  } catch (e) {
+    console.error(`Error leyendo ${dir}:`, e);
+  }
+  
+  return results;
+}
+
 // Cargar plugins
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
 const pluginFilter = (filename) => /\.js$/.test(filename);
@@ -564,53 +594,111 @@ global.plugins = {};
 async function filesInit() {
   console.log(chalk.blue('📂 [GOHAN BESTIA] Cargando plugins...'));
   let loaded = 0;
-  for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+  let errors = 0;
+  
+  // Obtener TODOS los archivos .js en subcarpetas
+  const pluginFiles = getAllPluginFiles(pluginFolder);
+  
+  console.log(chalk.gray(`📄 Encontrados ${pluginFiles.length} archivos .js`));
+  
+  for (const filePath of pluginFiles) {
     try {
-      const file = global.__filename(join(pluginFolder, filename));
-      const module = await import(file);
-      global.plugins[filename] = module.default || module;
+      // Obtener nombre relativo desde la carpeta plugins
+      const relativePath = path.relative(pluginFolder, filePath);
+      
+      // Importar el plugin
+      const module = await import(filePath);
+      global.plugins[relativePath] = module.default || module;
+      
       loaded++;
+      console.log(chalk.gray(`   ✅ Cargado: ${relativePath}`));
     } catch (e) {
-      conn.logger.error(`Error al cargar el plugin '${filename}': ${e}`);
-      delete global.plugins[filename];
+      errors++;
+      console.error(chalk.red(`   ❌ Error en ${path.basename(filePath)}:`), e.message);
     }
   }
-  console.log(chalk.green(`✅ [GOHAN BESTIA] ${loaded} plugins cargados correctamente`));
+  
+  console.log(chalk.green(`✅ [GOHAN BESTIA] ${loaded} plugins cargados, ${errors} errores`));
 }
 
 await filesInit();
 
-// Watch de plugins
+// Watch de plugins (MODIFICADO PARA SUBCARPETAS)
 global.reload = async (_ev, filename) => {
-  if (pluginFilter(filename)) {
-    const dir = global.__filename(join(pluginFolder, filename), true);
-    if (filename in global.plugins) {
-      if (existsSync(dir)) conn.logger.info(`🔄 Plugin actualizado - '${filename}'`);
-      else {
-        conn.logger.warn(`🗑️ Plugin eliminado - '${filename}'`);
-        return delete global.plugins[filename];
+  // Solo procesar archivos .js
+  if (!filename.endsWith('.js')) return;
+  
+  // Buscar el archivo en toda la carpeta plugins
+  let fullPath = null;
+  
+  function findFile(dir) {
+    try {
+      const list = readdirSync(dir);
+      for (const file of list) {
+        const filePath = join(dir, file);
+        const stat = statSync(filePath);
+        
+        if (stat.isDirectory()) {
+          const found = findFile(filePath);
+          if (found) return found;
+        } else if (file === filename) {
+          return filePath;
+        }
       }
-    } else conn.logger.info(`✨ Nuevo plugin - '${filename}'`);
-
-    const err = syntaxerror(readFileSync(dir), filename, {
+    } catch (e) {}
+    return null;
+  }
+  
+  // Buscar el archivo en toda la estructura
+  fullPath = findFile(pluginFolder);
+  
+  if (!fullPath) {
+    // Si no se encuentra, buscar en global.plugins para eliminar
+    for (const key in global.plugins) {
+      if (key.endsWith(filename)) {
+        delete global.plugins[key];
+        conn.logger.warn(`🗑️ Plugin eliminado - '${filename}'`);
+        break;
+      }
+    }
+    return;
+  }
+  
+  // Obtener ruta relativa
+  const relativePath = path.relative(pluginFolder, fullPath);
+  
+  // Verificar si existe en plugins (actualización)
+  const existsInPlugins = Object.keys(global.plugins).some(key => key === relativePath);
+  
+  if (existsInPlugins) {
+    conn.logger.info(`🔄 Plugin actualizado - '${relativePath}'`);
+  } else {
+    conn.logger.info(`✨ Nuevo plugin - '${relativePath}'`);
+  }
+  
+  // Verificar sintaxis
+  try {
+    const content = readFileSync(fullPath, 'utf8');
+    const err = syntaxerror(content, filename, {
       sourceType: 'module',
       allowAwaitOutsideFunction: true,
     });
-    if (err) conn.logger.error(`❌ Error de sintaxis en '${filename}':\n${format(err)}`);
-    else {
-      try {
-        const module = await import(`${global.__filename(dir)}?update=${Date.now()}`);
-        global.plugins[filename] = module.default || module;
-      } catch (e) {
-        conn.logger.error(`❌ Error al cargar plugin '${filename}':\n${format(e)}`);
-      } finally {
-        global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)));
-      }
+    
+    if (err) {
+      conn.logger.error(`❌ Error de sintaxis en '${relativePath}':\n${format(err)}`);
+      return;
     }
+    
+    // Recargar el plugin
+    const module = await import(`${fullPath}?update=${Date.now()}`);
+    global.plugins[relativePath] = module.default || module;
+    conn.logger.info(`✅ Plugin recargado: ${relativePath}`);
+  } catch (e) {
+    conn.logger.error(`❌ Error al recargar '${relativePath}':\n${format(e)}`);
   }
 };
-Object.freeze(global.reload);
 
+// Watch de plugins
 watch(pluginFolder, global.reload);
 await global.reloadHandler();
 
