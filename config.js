@@ -12,10 +12,22 @@ global.owner = [
 global.mods = []
 global.prems = []
 
-global.namebot = '𝙶𝙾𝙷𝙰𝙽 𝙱𝙴𝙰𝚂𝚃 🌀'
-global.packname = '𝙶𝙾𝙷𝙰𝙽-𝙱𝙴𝙰𝚂𝚃 🐉'
-global.author = '𝚆𝙸𝙻𝙺𝙴𝚁 | © 𝟸𝟶𝟸𝟼 '
-global.moneda = '𝙶𝙾𝙷𝙰𝙽 𝙱𝙴𝙰𝚂𝚃'
+
+
+
+global.botname = "𝙀𝙇𝙄𝙏𝙀 𝘽𝙊𝙏 𝙂𝙇𝙊𝘽𝘼𝙇"
+global.textbot = "𝙀𝙇𝙄𝙏𝙀 𝘽𝙊𝙏 𝙂𝙇𝙊𝘽𝘼𝙇\nSince - 2023®"
+global.dev = "Elite Bot Global - Since 2023®"
+global.music = "Elite Bot Global - Since 2023®"
+global.author = "© mᥲძᥱ ᥕі𝗍һ ᑲᥡ ƈαɾʅσʂ.ɾʋ"
+global.etiqueta = "✫ᴄᴀʀʟᴏs ʀᴀᴍɪʀᴇᴢ❄️ ⊹꙰ "
+global.currency = "g᥆𝗍іᥴᥲs"
+global.banner = "https://raw.githubusercontent.com/desconocido1515/desco/main/media/icono.jpg"
+global.icono = "https://raw.githubusercontent.com/desconocido1515/desco/main/media/icono.jpg"
+
+
+
+
 
 global.libreria = 'Baileys'
 global.baileys = 'V 6.7.16'
