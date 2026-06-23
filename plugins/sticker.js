@@ -76,7 +76,7 @@ const handler = async (m, { conn }) => {
     return conn.sendMessage(
       m.chat,
       { text: `✳️ *Uso Correcto:*\n➤ Responde a una *imagen/video* con el comando \`.s\` para convertirlo en sticker.`},
-      { quoted: m }
+      { quoted: m, rcanal}
     )
   }
 
