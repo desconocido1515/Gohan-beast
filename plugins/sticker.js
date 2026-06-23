@@ -1,71 +1,24 @@
-import fetch from 'node-fetch';
-import { sticker } from '../../lib/sticker.js';
-
-const handler = async (m, { conn, text, usedPrefix }) => {
-  try {
-    // Validar mención o respuesta
-    let mentionedJid = await m.mentionedJid;
-    let usuario = mentionedJid && mentionedJid.length ? mentionedJid[0] : m.quoted && await m.quoted.sender ? await m.quoted.sender : null;
-    
-    if (!usuario) {
-      return conn.reply(m.chat, `☑️ ETIQUETA A LA PERSONA\n\n📌 *Ejemplo:*\n.animo @usuario`, m, rcanal);
-    }
-    
-    if (usuario === m.sender) {
-      return conn.reply(m.chat, `☑️ No puedes darte ánimo a ti mismo. Etiqueta a otra persona.`, m, rcanal);
-    }
-    
-    const nombreUsuario = m.pushName || m.sender.split('@')[0];
-    const nombreMencionado = await conn.getName(usuario);
-    
-    // Textos de ánimo aleatorios
-    const textosAnimo = [
-      `💪 *${nombreMencionado}*, tú puedes con todo. Los momentos difíciles también pasan. ¡Sigue adelante! ✨`,
-      
-      `🌟 *${nombreMencionado}*, la vida es como una montaña rusa, con subidas y bajadas. Lo importante es no rendirse. ¡Tú eres fuerte! 💪`,
-      
-      `🌸 *${nombreMencionado}*, recuerda que después de la tormenta siempre sale el sol. Todo va a mejorar. ¡Confía en ti! 💫`,
-      
-      `🎈 *${nombreMencionado}*, no estás solo/a en esto. Cuenta conmigo y con todos los que te aprecian. ¡Eres importante! ❤️`,
-      
-      `🌻 *${nombreMencionado}*, a veces necesitamos una pausa para recargar energías. Tómate tu tiempo, pero nunca abandones. 🚀`,
-      
-      `⭐ *${nombreMencionado}*, cada día es una nueva oportunidad para ser feliz. ¡Sonríe, que la vida es hermosa! 😊`,
-      
-      `💖 *${nombreMencionado}*, mereces todo lo bueno que te pasa y más. No dejes que nadie te diga lo contrario. 🌈`,
-      
-      `🦋 *${nombreMencionado}*, los cambios son difíciles, pero siempre traen cosas nuevas y mejores. ¡Ánimo! 🍀`
-    ];
-    
-    const textoAleatorio = textosAnimo[Math.floor(Math.random() * textosAnimo.length)];
-    
-    // Reaccionar al mensaje
-    await conn.sendMessage(m.chat, {
-      react: { text: '💫', key: m.key }
-    });
-    
-    // Obtener imagen
-    const imageUrl = 'https://raw.githubusercontent.com/desconocido1515/desco/main/media/animo.jpeg';
-    
-    // Enviar imagen con el mensaje de ánimo
-    await conn.sendMessage(m.chat, {
-      image: { url: imageUrl },
-      caption: `💌 *⌈*  𝑨𝑵𝑰𝑴𝑶 *⌋* 💌\n\n${textoAleatorio}\n\n━━━━━━━━━━━━━━━━━━━\n✨ *${nombreUsuario}* te envió este mensaje de ánimo ✨\n━━━━━━━━━━━━━━━━━━━\n\n© Elite Bot Global - Since 2023®`,
-      mentions: [usuario, m.sender]
-    });
-    
-    // Reacción final
-    await conn.sendMessage(m.chat, {
-      react: { text: '✅', key: m.key }
-    });
-    
-  } catch (error) {
-    console.error('Error en comando ánimo:', error);
-    await conn.reply(m.chat, `☑️ Ocurrió un error al enviar el mensaje de ánimo.`, m, rcanal);
+var handler = async (m, { conn, command, text }) => {
+  if (!text) {
+    return conn.reply(m.chat, `🍭 𝙀𝙎𝘾𝙍𝙄𝘽𝙀 𝙀𝙇 𝙉𝙊𝙈𝘽𝙍𝙀 𝘿𝙀 𝘿𝙊𝙎 𝙋𝙀𝙍𝙎𝙊𝙉𝘼𝙎 𝙊 𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝘼𝙇𝙊𝙎 𝙋𝘼𝙍𝘼 𝘾𝘼𝙇𝘾𝙐𝙇𝘼𝙍 𝙎𝙐 𝘼𝙈𝙊𝙍.`, m, rcanal);
   }
-};
+  
+  let [text1, ...text2] = text.split(' ');
+  text2 = (text2 || []).join(' ');
+  
+  if (!text2) {
+    return conn.reply(m.chat, `🍭 𝙀𝙎𝘾𝙍𝙄𝘽𝙀 𝙊 𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝘼 𝙀𝙇 𝙉𝙊𝙈𝘽𝙍𝙀 𝘿𝙀 𝙇𝘼 𝙎𝙀𝙂𝙐𝙉𝘿𝘼 𝙋𝙀𝙍𝙎𝙊𝙉𝘼.`, m, rcanal);
+  }
+  
+  let love = `━━━━━━━━━━━━━━━
+❤️ *${text1}* 𝙏𝙐 𝙊𝙋𝙊𝙍𝙏𝙐𝙉𝙄𝘿𝘼𝘿 𝘿𝙀 𝙀𝙉𝘼𝙈𝙊𝙍𝘼𝙍𝙏𝙀 𝘿𝙀  *${text2}* 𝙀𝙎 𝘿𝙀 *${Math.floor(Math.random() * 100)}%* 👩🏻‍❤️‍👨🏻 
+━━━━━━━━━━━━━━━`.trim();
+  
+  m.reply(love, null, { mentions: conn.parseMention(love) });
+}
 
-handler.command = /^(animo|ánimo)$/i;
-handler.group = true;
+handler.help = ['love']
+handler.tags = ['fun']
+handler.command = /^(enamorar|ship)$/i
 
 export default handler;
