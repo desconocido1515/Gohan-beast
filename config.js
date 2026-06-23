@@ -67,7 +67,7 @@ light: { url: "https://api--shadowcorexyz.replit.app", key: null }
 let file = fileURLToPath(import.meta.url)
 watchFile(file, () => {
 unwatchFile(file)
-console.log(chalk.redBright("Update 'configXD.js'"))
+console.log(chalk.redBright("Update 'config.js'"))
 import(`${file}?update=${Date.now()}`)
 })
 // ========== CONFIGURACIÓN DE CANAL (rcanal) ==========
