@@ -93,8 +93,26 @@ global.prefix = new RegExp(
     ']'
 );
 
+// === CREAR database.json EN LA RAÍZ ===
+const dbFile = path.join(process.cwd(), 'database.json');
+
+if (!fs.existsSync(dbFile)) {
+  fs.writeFileSync(dbFile, JSON.stringify({
+    users: {},
+    chats: {},
+    stats: {},
+    msgs: {},
+    sticker: {},
+    settings: {}
+  }, null, 2));
+  console.log(chalk.green('✅ database.json creado en la raíz'));
+} else {
+  console.log(chalk.gray('📄 database.json ya existe'));
+}
+// === FIN CREAR database.json ===
+
 // Configuración de base de datos
-global.db = new Low(new JSONFile(`storage/databases/database.json`));
+global.db = new Low(new JSONFile(`database.json`));
 
 // --- OPTIMIZACIÓN DE BASE DE DATOS ---
 global.isDatabaseModified = false;
