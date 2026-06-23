@@ -28,7 +28,6 @@ function getChatConfig(botNumber, chatId) {
   if (!settings[botNumber][chatId]) {
     settings[botNumber][chatId] = {
       antilink: false,
-      welcome: false,
       antiarabe: false,
       modoadmin: false
     }
@@ -42,10 +41,10 @@ const handler = async (m, { conn, command, args, isAdmin }) => {
 
   const type = (args[0] || '').toLowerCase()
   const enable = command === 'on'
-  const validTypes = ['antilink', 'welcome', 'antiarabe', 'modoadmin']
+  const validTypes = ['antilink', 'antiarabe', 'modoadmin']
   if (!validTypes.includes(type)) {
     return m.reply(
-      `*_🟢 ON:_*\n\n_.on antilink_\n_.on welcome_\n_.on antiarabe_\n_.on modoadmin_\n\n\n*_🔴 OFF:_*\n\n_.off antilink_\n_.off welcome_\n_.off antiarabe_\n_.off modoadmin_`
+      `*_🟢 ON:_*\n\n_.on antilink_\n_.on antiarabe_\n_.on modoadmin_\n\n\n*_🔴 OFF:_*\n\n_.off antilink_\n_.off antiarabe_\n_.off modoadmin_`
     )
   }
 
@@ -112,37 +111,6 @@ handler.before = async (m, { conn }) => {
       return true
     }
   }
-
-  // 👋 WELCOME/BYE
-  if (chat.welcome && [27, 28, 32].includes(m.messageStubType)) {
-    const groupMetadata = await conn.groupMetadata(m.chat)
-    const groupSize = groupMetadata.participants.length
-    const userId = m.messageStubParameters?.[0] || m.sender
-    const userMention = `@${userId.split('@')[0]}`
-    let profilePic
-    try {
-      profilePic = await conn.profilePictureUrl(userId, 'image')
-    } catch {
-      profilePic = defaultImage
-    }
-
-    if (m.messageStubType === 27) {
-      await conn.sendMessage(m.chat, {
-        image: { url: profilePic },
-        caption: `🐉 *BIENVENIDO*\n\n🌀 *Bienvenid@* a *${groupMetadata.subject}* \n🐉 ${userMention}\n🐉 Ahora somos *${groupSize}* miembros :)`,
-        contextInfo: { mentionedJid: [userId] }
-      })
-    }
-
-    if ([28, 32].includes(m.messageStubType)) {
-      await conn.sendMessage(m.chat, {
-        image: { url: profilePic },
-        caption: `🐉 *ADIÓS*\n\n🌀 *Adiós* de *${groupMetadata.subject}* \n🐉 ${userMention}\n🌀 Somos *${groupSize}* miembros aún. :)`,
-        contextInfo: { mentionedJid: [userId] }
-      })
-    }
-  }
-
 }
 
 export default handler
