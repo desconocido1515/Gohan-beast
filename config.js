@@ -35,7 +35,7 @@ global.etiqueta = "✫ᴄᴀʀʟᴏs ʀᴀᴍɪʀᴇᴢ❄️ ⊹꙰ "
 global.currency = "g᥆𝗍іᥴᥲs"
 global.banner = "https://raw.githubusercontent.com/desconocido1515/desco/main/media/icono.jpg"
 global.icono = "https://raw.githubusercontent.com/desconocido1515/desco/main/media/icono.jpg"
-global.catalogo = fs.readFileSync('./lib/catalogo.jpg')
+//global.catalogo = fs.readFileSync('./lib/catalogo.jpg')
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
