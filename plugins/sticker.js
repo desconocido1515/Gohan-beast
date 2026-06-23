@@ -1,113 +1,98 @@
 import fs from 'fs'
-import path from 'path'
-import crypto from 'crypto'
-import { spawn } from 'child_process'
-import fluent_ffmpeg from 'fluent-ffmpeg'
-import fetch from 'node-fetch'
-import { fileTypeFromBuffer } from 'file-type'
-import webp from 'node-webpmux'
+import { sticker } from '../../lib/sticker.js'
+import uploadFile from '../../lib/uploadFile.js'
+import uploadImage from '../../lib/uploadImage.js'
+import { webp2png } from '../../lib/webp2mp4.js'
 
-const tmp = path.join(process.cwd(), 'tmp')
-if (!fs.existsSync(tmp)) fs.mkdirSync(tmp)
-
-async function addExif(webpSticker, packname, author, categories = [''], extra = {}) {
-  const img = new webp.Image()
-  const stickerPackId = crypto.randomBytes(32).toString('hex')
-  const json = {
-    'sticker-pack-id': stickerPackId,
-    'sticker-pack-name': packname,
-    'sticker-pack-publisher': author,
-    'emojis': categories,
-    ...extra
-  }
-  const exifAttr = Buffer.from([
-    0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,
-    0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x16, 0x00, 0x00, 0x00
-  ])
-  const jsonBuffer = Buffer.from(JSON.stringify(json), 'utf8')
-  const exif = Buffer.concat([exifAttr, jsonBuffer])
-  exif.writeUIntLE(jsonBuffer.length, 14, 4)
-  await img.load(webpSticker)
-  img.exif = exif
-  return await img.save(null)
+// ========== FKONTAK ==========
+function getFkontak(sender) {
+    return {
+        key: {
+            participants: '0@s.whatsapp.net',
+            remoteJid: 'status@broadcast',
+            fromMe: false,
+            id: 'Halo'
+        },
+        message: {
+            contactMessage: {
+                vcard: `BEGIN:VCARD
+VERSION:3.0
+N:Sy;Bot;;;
+FN:Bot
+item1.TEL;waid=${sender.split('@')[0]}:${sender.split('@')[0]}
+item1.X-ABLabel:Ponsel
+END:VCARD`
+            }
+        },
+        participant: '0@s.whatsapp.net'
+    }
 }
+// ==========================================
 
-async function sticker(img, url, packname, author) {
-  if (url) {
-    let res = await fetch(url)
-    if (res.status !== 200) throw await res.text()
-    img = await res.buffer()
-  }
-  const type = await fileTypeFromBuffer(img) || { mime: 'application/octet-stream', ext: 'bin' }
-  if (type.ext === 'bin') throw new Error('Tipo de archivo inválido')
-
-  const tmpFile = path.join(tmp, `${Date.now()}.${type.ext}`)
-  const outFile = `${tmpFile}.webp`
-  await fs.promises.writeFile(tmpFile, img)
-
-  await new Promise((resolve, reject) => {
-    const ff = /video/i.test(type.mime)
-      ? fluent_ffmpeg(tmpFile).inputFormat(type.ext)
-      : fluent_ffmpeg(tmpFile).input(tmpFile)
-
-    ff.addOutputOptions([
-      `-vcodec`, `libwebp`, `-vf`,
-      `scale='min(512,iw)':min'(512,ih)':force_original_aspect_ratio=decrease,fps=15, pad=512:512:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`
-    ])
-      .toFormat('webp')
-      .save(outFile)
-      .on('error', reject)
-      .on('end', resolve)
-  })
-
-  const buffer = await fs.promises.readFile(outFile)
-  fs.promises.unlink(tmpFile).catch(() => {})
-  fs.promises.unlink(outFile).catch(() => {})
-
-  return await addExif(buffer, packname, author)
+// 🔧 CREAR CARPETA TMP AUTOMÁTICAMENTE
+const tmpDir = '/home/container/tmp'
+if (!fs.existsSync(tmpDir)) {
+  fs.mkdirSync(tmpDir, { recursive: true })
+  console.log('✅ Carpeta tmp creada automáticamente')
 }
+// ====================================
 
-const handler = async (m, { conn }) => {
-  const q = m.quoted ? m.quoted : m
-  const mime = (q.msg || q).mimetype || ''
+let handler = async (m, { conn, args }) => {
+let stiker = false
+let userId = m.sender
+let packstickers = global.db.data.users[userId] || {}
+let texto1 = packstickers.text1 || global.packsticker
+let texto2 = packstickers.text2 || global.packsticker2
 
-  if (!/image|video/.test(mime)) {
-    return conn.sendMessage(
-      m.chat,
-      { text: `✳️ *Uso Correcto:*\n➤ Responde a una *imagen/video* con el comando \`.s\` para convertirlo en sticker.`},
-      { quoted: m, rcanal}
-    )
-  }
+const fkontak = getFkontak(m.sender)
 
-  await m.react('⏳')
+try {
+let q = m.quoted ? m.quoted : m
+let mime = (q.msg || q).mimetype || q.mediaType || ''
+let txt = args.join(' ')
+if (/webp|image|video/g.test(mime) && q.download) {
+if (/video/.test(mime) && (q.msg || q).seconds > 16)
+return conn.sendMessage(m.chat, {
+    text: '✧ El video no puede durar más de *15 segundos*',
+    ...global.rcanal,
+    ...fkontak
+}, { quoted: fkontak })
+let buffer = await q.download()
+await m.react('🕓')
+let marca = txt ? txt.split(/[\u2022|]/).map(part => part.trim()) : [texto1, texto2]
+stiker = await sticker(buffer, false, marca[0], marca[1])
+} else if (args[0] && isUrl(args[0])) {
+let buffer = await sticker(false, args[0], texto1, texto2)
+stiker = buffer
+} else {
+return conn.sendMessage(m.chat, {
+    text: 'Envía una imagen o vídeo para convertir en sticker',
+    ...global.rcanal,
+    ...fkontak
+}, { quoted: fkontak })
+}} catch (e) {
+await conn.sendMessage(m.chat, {
+    text: '⚠︎ Ocurrió un Error: ' + e.message,
+    ...global.rcanal,
+    ...fkontak
+}, { quoted: fkontak })
+await m.react('✖️')
+} finally {
+if (stiker) {
+await conn.sendMessage(m.chat, {
+    sticker: stiker,
+    ...global.rcanal,
+    ...fkontak
+}, { quoted: fkontak })
+await m.react('✅')
+}}}
 
-  try {
-    const media = await q.download()
-    if (!media) throw new Error('No se pudo descargar la media')
-
-    const packname = global.packname || '🔹 *Gohan beas*'
-    const author = global.author || '© Made with ☁︎ *WILKER-OFC* ✧'
-
-    const stiker = await sticker(media, false, packname, author)
-
-    if (!Buffer.isBuffer(stiker)) throw new Error('No se pudo generar el sticker')
-
-    await conn.sendMessage(m.chat, { sticker: stiker}, { quoted: m })
-    await m.react('✅')
-  } catch (e) {
-    console.error(e)
-    await m.react('❌')
-    await conn.sendMessage(
-      m.chat,
-      { text: '❌ No se pudo generar el sticker'},
-      { quoted: m }
-    )
-  }
-}
-
-handler.help = ['sticker',]
+handler.help = ['sticker']
 handler.tags = ['sticker']
-handler.command = ['sticker', 's']
+handler.command = ['s', 'sticker']
 
 export default handler
+
+const isUrl = (text) => {
+return text.match(new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)(jpe?g|gif|png)/, 'gi'))
+}
