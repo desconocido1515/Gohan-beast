@@ -26,6 +26,7 @@
   "license": "MIT-LICENSE",
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@napi-rs/canvas": "^0.1.53",
     "@whiskeysockets/baileys": "github:dvwilker/DvwilkerBail",
     "awesome-phonenumber": "^3.4.0",
     "axios": "^1.1.2",
