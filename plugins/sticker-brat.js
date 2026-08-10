@@ -13,10 +13,9 @@ Uso correcto:
 .brat <texto>
 
 Ejemplo:
-.brat Hola guerrero
+.brat Hola gohan
 
-El texto se convertira en un sticker estilo BRAT.
-Fondo blanco, texto negro.`)
+El texto se convertira en un sticker estilo BRAT.`)
   }
 
   try {
