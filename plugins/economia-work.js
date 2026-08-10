@@ -3,7 +3,7 @@ import { getUser, updateUser, getCooldown, formatTime, formatNumber } from '../e
 let handler = async (m, { conn }) => {
   const userId = m.sender
   const user = getUser(userId)
-  
+
   if (!user.registered) {
     return conn.reply(m.chat, '❌ Debes registrarte primero. Usa .reg nombre.edad', m)
   }
@@ -44,7 +44,7 @@ ${trabajo.emoji} Has trabajado como *${trabajo.nombre}*
 ⚡ +${expGanada} XP
 💎 Total: ${formatNumber(user.coins)} ${global.coin}
 
-🔄 Vuelve en 1 hora
+🔄 Vuelve en 2 minutos
     `.trim(), m)
   await m.react('💼')
 }
