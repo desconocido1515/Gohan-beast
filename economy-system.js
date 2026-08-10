@@ -19,7 +19,7 @@ global.gambleCoins = { min: 100, max: 1000 }
 
 global.cooldown = {
   daily: 86400000,
-  work: 60000,
+  work: 120000,
   mine: 60000,
   run: 60000,
   slut: 60000,
