@@ -21,21 +21,18 @@ Fondo blanco, texto negro.`)
 
   try {
     await m.react('⏳')
+    await conn.sendMessage(m.chat, { text: '🔄 *Generando sticker Brat...*' }, { quoted: m })
 
     const apiUrl = `https://api.agatz.xyz/api/brat?text=${encodeURIComponent(text)}`
     const response = await axios.get(apiUrl, { responseType: 'arraybuffer' })
     
     const imageBuffer = Buffer.from(response.data)
     
-    await conn.sendFile(
-      m.chat,
-      imageBuffer,
-      'brat.jpg',
-      '',
-      m,
-      false,
-      { asSticker: true }
-    )
+    await conn.sendMessage(m.chat, {
+      sticker: imageBuffer,
+      packname: 'Gohan Beast',
+      author: 'Dvwilker'
+    }, { quoted: m })
 
     await m.react('✅')
   } catch (e) {
