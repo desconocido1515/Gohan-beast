@@ -13,7 +13,7 @@ Uso correcto:
 .brat <texto>
 
 Ejemplo:
-.brat Hola gohan
+.brat Hola
 
 El texto se convertira en un sticker estilo BRAT.`)
   }
@@ -27,11 +27,10 @@ El texto se convertira en un sticker estilo BRAT.`)
     
     const imageBuffer = Buffer.from(response.data)
     
-    await conn.sendMessage(m.chat, {
-      sticker: imageBuffer,
+    const sticker = await conn.sendImageAsSticker(m.chat, imageBuffer, m, {
       packname: 'Gohan Beast',
       author: 'Dvwilker'
-    }, { quoted: m })
+    })
 
     await m.react('✅')
   } catch (e) {
