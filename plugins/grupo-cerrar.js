@@ -1,4 +1,4 @@
-let handler = async (m, { conn, text, args, isAdmin, isBotAdmin, groupMetadata }) => {
+let handler = async (m, { conn, text, args, isAdmin, groupMetadata }) => {
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   if (!m.isGroup) {
@@ -16,7 +16,7 @@ let handler = async (m, { conn, text, args, isAdmin, isBotAdmin, groupMetadata }
     return pid === botJid && (p.admin === 'admin' || p.admin === 'superadmin' || p.admin === true);
   });
 
-  if (!isBotAdmin || !botIsReallyAdmin) {
+  if (!botIsReallyAdmin) {
     return conn.reply(m.chat, '⚠️ Sin poder\nNecesito ser maestro (admin) para cerrar.', m);
   }
 
@@ -55,48 +55,24 @@ let handler = async (m, { conn, text, args, isAdmin, isBotAdmin, groupMetadata }
   }
 
   try {
-    await m.react('🔒');
-    await m.react('🐉');
-
     await conn.groupSettingUpdate(m.chat, 'announcement');
 
-    const cierreMsg = await conn.sendMessage(m.chat, {
-      text: `🐉 DOJO CERRADO\n\n⏰ Tiempo: ${args[0]} ${unidad}\n\n⏳ Cuenta regresiva iniciada...`
-    });
-
-    const formatTiempo = (segundos) => {
-      if (segundos < 60) return `${segundos} segundos`;
-      if (segundos < 3600) {
-        const min = Math.floor(segundos / 60);
-        const sec = segundos % 60;
-        return `${min} minuto${min !== 1 ? 's' : ''} ${sec > 0 ? sec + ' segundo' + (sec !== 1 ? 's' : '') : ''}`;
-      }
-      const horas = Math.floor(segundos / 3600);
-      const min = Math.floor((segundos % 3600) / 60);
-      return `${horas} hora${horas !== 1 ? 's' : ''} ${min > 0 ? min + ' minuto' + (min !== 1 ? 's' : '') : ''}`;
-    };
-
-    const crearBarra = (porcentaje) => {
-      const barras = 20;
-      const lleno = Math.round((porcentaje / 100) * barras);
-      const vacio = barras - lleno;
-      return '█'.repeat(lleno) + '░'.repeat(vacio);
-    };
+    await conn.reply(m.chat, `🐉 DOJO CERRADO\n\n⏰ Tiempo: ${args[0]} ${unidad}\n\n⏳ Cuenta regresiva iniciada...`, m);
 
     let segundosRestantes = tiempoSegundos;
 
     const cuentaRegresiva = async () => {
       while (segundosRestantes > 0) {
-        await delay(20000);
-        segundosRestantes -= 20;
+        await delay(60000); 
+        segundosRestantes -= 60;
         if (segundosRestantes <= 0) break;
 
-        const porcentaje = ((tiempoSegundos - segundosRestantes) / tiempoSegundos) * 100;
+        let min = Math.floor(segundosRestantes / 60);
+        let sec = segundosRestantes % 60;
+        let tiempoRestanteStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+
         try {
-          await conn.sendMessage(m.chat, {
-            text: `⏳ TIEMPO RESTANTE\n\n${crearBarra(porcentaje)} ${Math.round(porcentaje)}%\n\n🕐 ${formatTiempo(segundosRestantes)}\n🐉 Abriendo en breve...`,
-            edit: cierreMsg.key
-          });
+          await conn.reply(m.chat, `⏳ TIEMPO RESTANTE\n\n🕐 Quedan ${tiempoRestanteStr}\n🐉 Abriendo en breve...`, m);
         } catch (error) {}
       }
     };
@@ -105,23 +81,9 @@ let handler = async (m, { conn, text, args, isAdmin, isBotAdmin, groupMetadata }
 
     await delay(tiempoMs);
 
-    try {
-      await conn.sendMessage(m.chat, {
-        text: `✅ CUENTA REGRESIVA COMPLETADA\n\n████████████████████ 100%\n\n⏰ Tiempo cumplido\n🐉 Abriendo dojo...`,
-        edit: cierreMsg.key
-      });
-    } catch (error) {}
-
-    await delay(1000);
-
     await conn.groupSettingUpdate(m.chat, 'not_announcement');
 
-    await m.react('✅');
-    await m.react('🎉');
-
-    await conn.sendMessage(m.chat, { 
-      text: `🎊 DOJO ABIERTO\n\n✅ Cerrado por: ${args[0]} ${unidad}\n⏱️ Tiempo exacto cumplido\n🐉 ¡Todos pueden hablar nuevamente!`
-    });
+    await conn.reply(m.chat, `🎊 DOJO ABIERTO\n\n✅ Cerrado por: ${args[0]} ${unidad}\n⏱️ Tiempo exacto cumplido\n🐉 ¡Todos pueden hablar nuevamente!`, m);
 
     const celebraciones = ['✨', '🎉', '⚡', '🔥', '🌟'];
     for (let emoji of celebraciones) {
@@ -142,6 +104,6 @@ handler.tags = ['grupo'];
 handler.command = /^cerrar$/i;
 handler.group = true;
 handler.admin = true;
-handler.botAdmin = true;
+handler.botAdmin = false;
 
 export default handler;
