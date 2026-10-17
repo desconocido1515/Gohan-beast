@@ -27,7 +27,7 @@
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@napi-rs/canvas": "^0.1.53",
-    "@whiskeysockets/baileys": "npm:@itsliaaa/baileys@^0.3.18-final",
+    "@whiskeysockets/baileys": "git@github.com:Andresv27728/baileys-beta.git",
     "awesome-phonenumber": "^3.4.0",
     "axios": "^1.1.2",
     "baileys": "npm:@itsliaaa/baileys@^0.3.18-final",
