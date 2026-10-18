@@ -30,7 +30,6 @@
     "@whiskeysockets/baileys": "git@github.com:Andresv27728/baileys-beta.git",
     "awesome-phonenumber": "^3.4.0",
     "axios": "^1.1.2",
-    "baileys": "npm:@itsliaaa/baileys@^0.3.18-final",
     "acrcloud": "^1.4.0",
     "cfonts": "^3.3.1",
     "chalk": "^5.1.0",
