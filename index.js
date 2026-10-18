@@ -15,7 +15,7 @@ const require = createRequire(__dirname)
 cfonts.say('🐉 GOHAN BEAST ⚡', {
   font: 'block',
   align: 'center',
-  gradient: ['red', 'yellow', 'blue'],
+  gradient: ['red', 'yellow'],
   background: 'Black',
   letterSpacing: 1,
   lineHeight: 1,
@@ -33,7 +33,7 @@ console.log('\x1b[36m%s\x1b[0m', '═' * 60)
 cfonts.say('👊 CREADO POR: WILKER OFC 👊', {
   font: 'console',
   align: 'center',
-  gradient: ['cyan', 'white', 'magenta'],
+  gradient: ['cyan', 'magenta'],
   env: 'node'
 })
 
