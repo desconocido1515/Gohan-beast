@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import Jimp from 'jimp'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -30,28 +29,14 @@ let handler = async (m, { conn, command }) => {
   try {
     await m.react('⏳')
     
-    const width = 800
-    const height = 600
-    const image = new Jimp(width, height, '#1e1e1e')
+    const textoCompleto = `╔════════════════════╗\n║  ${titulo}  ║\n╚════════════════════╝\n\n${ultimasLineas}`
 
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE)
-    
-    const textoCompleto = `${titulo}\n\n${ultimasLineas}`
-    
-    image.print(font, 20, 20, {
-      text: textoCompleto,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
-      alignmentY: Jimp.VERTICAL_ALIGN_TOP
-    }, width - 40, height - 40)
-
-    const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-
-    await conn.sendMessage(m.chat, { image: buffer, caption: `✅ Aquí tienes: ${titulo}` }, { quoted: m })
+    await conn.sendMessage(m.chat, { text: textoCompleto }, { quoted: m })
     await m.react('✅')
 
   } catch (e) {
     console.error(e)
-    m.reply('Error al generar la imagen. Asegúrate de tener instalado "jimp".')
+    m.reply('Error al enviar los logs.')
     await m.react('❌')
   }
 }
